@@ -3,15 +3,608 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ミュージックビデオクリエーター</title>
+    <title>自動スライドショー作成</title>
     <style>
-        /* 省略: ユーザー提供のスタイルそのまま */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 40px 0;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .upload-section {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .upload-area {
+            border: 3px dashed rgba(255, 255, 255, 0.5);
+            border-radius: 15px;
+            padding: 50px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .upload-area:hover {
+            border-color: rgba(255, 255, 255, 0.8);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .upload-area.dragover {
+            border-color: #4CAF50;
+            background: rgba(76, 175, 80, 0.1);
+        }
+
+        .upload-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.7;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .control-group {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .control-group input,
+        .control-group select {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 16px;
+        }
+
+        .control-group input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .slideshow-container {
+            position: relative;
+            width: 100%;
+            height: 600px;
+            border-radius: 20px;
+            overflow: hidden;
+            background: rgba(0, 0, 0, 0.3);
+            margin-bottom: 30px;
+        }
+
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+        }
+
+        .slide.active {
+            opacity: 1;
+        }
+
+        .slide img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .slide-info {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0,0,0,0.7));
+            padding: 30px 20px 20px;
+            color: white;
+        }
+
+        .audio-controls {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #FF6B6B, #4ECDC4);
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 0 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #FF6B6B, #4ECDC4);
+            width: 0%;
+            transition: width 0.1s ease;
+        }
+
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 15px;
+            margin-top: 20px;
+        }
+
+        .photo-thumbnail {
+            width: 100%;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .photo-thumbnail:hover {
+            transform: scale(1.05);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .photo-thumbnail.selected {
+            border-color: #4ECDC4;
+            box-shadow: 0 0 10px rgba(78, 205, 196, 0.5);
+        }
+
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(1.1);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .slide.fade-in {
+            animation: fadeInScale 1s ease-out;
+        }
+
+        .status {
+            text-align: center;
+            padding: 20px;
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
     </style>
 </head>
 <body>
-    <!-- 省略: ユーザー提供の HTML 本文そのまま -->
+    <div class="container">
+        <div class="header">
+            <h1>🎵 自動スライドショー作成</h1>
+            <p>写真をアップロードして、音楽に合わせた美しいスライドショーを作成しましょう</p>
+        </div>
+
+        <div class="upload-section">
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📸</div>
+                <h3>写真をドラッグ＆ドロップ、またはクリックして選択</h3>
+                <p>JPG, PNG, GIF形式 / 複数選択可能</p>
+                <input type="file" id="imageInput" multiple accept="image/*" style="display: none;">
+            </div>
+
+            <div class="controls">
+                <div class="control-group">
+                    <label for="audioInput">🎵 音楽ファイル（オプション）</label>
+                    <input type="file" id="audioInput" accept="audio/*">
+                </div>
+                <div class="control-group">
+                    <label for="slideDuration">⏱️ スライド表示時間（秒）</label>
+                    <input type="number" id="slideDuration" value="3" min="1" max="10">
+                </div>
+                <div class="control-group">
+                    <label for="effectType">✨ トランジション効果</label>
+                    <select id="effectType">
+                        <option value="fade">フェード</option>
+                        <option value="slide">スライド</option>
+                        <option value="zoom">ズーム</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="autoSelect">🤖 自動選択枚数</label>
+                    <input type="number" id="autoSelect" value="20" min="5" max="100">
+                </div>
+            </div>
+
+            <div class="photo-grid" id="photoGrid" style="display: none;"></div>
+        </div>
+
+        <div class="slideshow-container" id="slideshowContainer">
+            <div class="status" id="status">写真をアップロードしてスライドショーを開始してください</div>
+        </div>
+
+        <div class="audio-controls">
+            <button class="btn" id="startBtn" disabled>▶️ スライドショー開始</button>
+            <button class="btn" id="pauseBtn" disabled>⏸️ 一時停止</button>
+            <button class="btn" id="stopBtn" disabled>⏹️ 停止</button>
+            <button class="btn" id="autoSelectBtn" disabled>🎲 自動選択</button>
+        </div>
+
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+        <audio id="audioPlayer" loop></audio>
+    </div>
+
     <script>
-        /* 省略: ユーザー提供の JavaScript クラス MusicVideoCreator そのまま */
+        class SlideshowCreator {
+            constructor() {
+                this.photos = [];
+                this.selectedPhotos = [];
+                this.currentSlide = 0;
+                this.isPlaying = false;
+                this.slideInterval = null;
+                this.slideDuration = 3000;
+                
+                this.initElements();
+                this.bindEvents();
+            }
+
+            initElements() {
+                this.uploadArea = document.getElementById('uploadArea');
+                this.imageInput = document.getElementById('imageInput');
+                this.audioInput = document.getElementById('audioInput');
+                this.photoGrid = document.getElementById('photoGrid');
+                this.slideshowContainer = document.getElementById('slideshowContainer');
+                this.audioPlayer = document.getElementById('audioPlayer');
+                this.status = document.getElementById('status');
+                this.progressFill = document.getElementById('progressFill');
+                
+                this.startBtn = document.getElementById('startBtn');
+                this.pauseBtn = document.getElementById('pauseBtn');
+                this.stopBtn = document.getElementById('stopBtn');
+                this.autoSelectBtn = document.getElementById('autoSelectBtn');
+                
+                this.slideDurationInput = document.getElementById('slideDuration');
+                this.effectTypeSelect = document.getElementById('effectType');
+                this.autoSelectInput = document.getElementById('autoSelect');
+            }
+
+            bindEvents() {
+                // ファイルアップロード
+                this.uploadArea.addEventListener('click', () => this.imageInput.click());
+                this.imageInput.addEventListener('change', (e) => this.handleFiles(e.target.files));
+                this.audioInput.addEventListener('change', (e) => this.handleAudio(e.target.files[0]));
+
+                // ドラッグ&ドロップ
+                this.uploadArea.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    this.uploadArea.classList.add('dragover');
+                });
+                
+                this.uploadArea.addEventListener('dragleave', () => {
+                    this.uploadArea.classList.remove('dragover');
+                });
+                
+                this.uploadArea.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    this.uploadArea.classList.remove('dragover');
+                    this.handleFiles(e.dataTransfer.files);
+                });
+
+                // コントロールボタン
+                this.startBtn.addEventListener('click', () => this.startSlideshow());
+                this.pauseBtn.addEventListener('click', () => this.pauseSlideshow());
+                this.stopBtn.addEventListener('click', () => this.stopSlideshow());
+                this.autoSelectBtn.addEventListener('click', () => this.autoSelectPhotos());
+
+                // 設定変更
+                this.slideDurationInput.addEventListener('change', (e) => {
+                    this.slideDuration = parseInt(e.target.value) * 1000;
+                });
+            }
+
+            async handleFiles(files) {
+                const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
+                
+                for (const file of imageFiles) {
+                    const url = URL.createObjectURL(file);
+                    const img = new Image();
+                    
+                    await new Promise((resolve) => {
+                        img.onload = () => {
+                            this.photos.push({
+                                url: url,
+                                file: file,
+                                name: file.name,
+                                aspect: img.width / img.height,
+                                size: file.size
+                            });
+                            resolve();
+                        };
+                        img.src = url;
+                    });
+                }
+
+                this.displayPhotoGrid();
+                this.updateStatus(`${this.photos.length}枚の写真が読み込まれました`);
+                this.autoSelectBtn.disabled = false;
+            }
+
+            displayPhotoGrid() {
+                this.photoGrid.innerHTML = '';
+                this.photoGrid.style.display = 'grid';
+
+                this.photos.forEach((photo, index) => {
+                    const img = document.createElement('img');
+                    img.src = photo.url;
+                    img.className = 'photo-thumbnail';
+                    img.onclick = () => this.togglePhotoSelection(index);
+                    this.photoGrid.appendChild(img);
+                });
+            }
+
+            togglePhotoSelection(index) {
+                const img = this.photoGrid.children[index];
+                const photoIndex = this.selectedPhotos.indexOf(index);
+
+                if (photoIndex > -1) {
+                    this.selectedPhotos.splice(photoIndex, 1);
+                    img.classList.remove('selected');
+                } else {
+                    this.selectedPhotos.push(index);
+                    img.classList.add('selected');
+                }
+
+                this.startBtn.disabled = this.selectedPhotos.length === 0;
+                this.updateStatus(`${this.selectedPhotos.length}枚の写真を選択中`);
+            }
+
+            autoSelectPhotos() {
+                const maxSelect = Math.min(
+                    parseInt(this.autoSelectInput.value),
+                    this.photos.length
+                );
+
+                // 既存の選択をクリア
+                this.selectedPhotos = [];
+                Array.from(this.photoGrid.children).forEach(img => {
+                    img.classList.remove('selected');
+                });
+
+                // 写真の品質スコアを計算（ファイルサイズとアスペクト比を考慮）
+                const scoredPhotos = this.photos.map((photo, index) => ({
+                    index,
+                    score: this.calculatePhotoScore(photo)
+                }));
+
+                // スコア順にソートして上位を選択
+                scoredPhotos.sort((a, b) => b.score - a.score);
+                
+                for (let i = 0; i < maxSelect; i++) {
+                    const photoIndex = scoredPhotos[i].index;
+                    this.selectedPhotos.push(photoIndex);
+                    this.photoGrid.children[photoIndex].classList.add('selected');
+                }
+
+                this.startBtn.disabled = false;
+                this.updateStatus(`自動で${this.selectedPhotos.length}枚の写真を選択しました`);
+            }
+
+            calculatePhotoScore(photo) {
+                // ファイルサイズスコア（大きいほど高品質と仮定）
+                const sizeScore = Math.log(photo.size) / 20;
+                
+                // アスペクト比スコア（16:9や4:3に近いほど高スコア）
+                const idealRatios = [16/9, 4/3, 3/2, 1];
+                const aspectScore = Math.max(...idealRatios.map(ratio => 
+                    1 / (1 + Math.abs(photo.aspect - ratio))
+                ));
+
+                // ランダム要素を追加（多様性のため）
+                const randomScore = Math.random() * 0.3;
+
+                return sizeScore + aspectScore * 2 + randomScore;
+            }
+
+            handleAudio(file) {
+                if (file) {
+                    const url = URL.createObjectURL(file);
+                    this.audioPlayer.src = url;
+                    this.updateStatus(`音楽ファイル "${file.name}" を読み込みました`);
+                }
+            }
+
+            startSlideshow() {
+                if (this.selectedPhotos.length === 0) return;
+
+                this.isPlaying = true;
+                this.currentSlide = 0;
+                
+                this.startBtn.disabled = true;
+                this.pauseBtn.disabled = false;
+                this.stopBtn.disabled = false;
+
+                this.createSlides();
+                this.showSlide(0);
+                
+                if (this.audioPlayer.src) {
+                    this.audioPlayer.play().catch(() => {
+                        console.log('音楽の自動再生がブロックされました');
+                    });
+                }
+
+                this.slideInterval = setInterval(() => {
+                    this.nextSlide();
+                }, this.slideDuration);
+
+                this.updateStatus('スライドショー再生中...');
+            }
+
+            pauseSlideshow() {
+                if (this.isPlaying) {
+                    this.isPlaying = false;
+                    clearInterval(this.slideInterval);
+                    this.audioPlayer.pause();
+                    this.startBtn.disabled = false;
+                    this.pauseBtn.disabled = true;
+                    this.updateStatus('スライドショー一時停止中');
+                } else {
+                    this.startSlideshow();
+                }
+            }
+
+            stopSlideshow() {
+                this.isPlaying = false;
+                clearInterval(this.slideInterval);
+                this.audioPlayer.pause();
+                this.audioPlayer.currentTime = 0;
+                
+                this.startBtn.disabled = false;
+                this.pauseBtn.disabled = true;
+                this.stopBtn.disabled = true;
+
+                this.slideshowContainer.innerHTML = '<div class="status">スライドショーを停止しました</div>';
+                this.progressFill.style.width = '0%';
+                this.updateStatus('スライドショーを停止しました');
+            }
+
+            createSlides() {
+                this.slideshowContainer.innerHTML = '';
+                
+                this.selectedPhotos.forEach((photoIndex, slideIndex) => {
+                    const photo = this.photos[photoIndex];
+                    const slide = document.createElement('div');
+                    slide.className = 'slide';
+                    
+                    const img = document.createElement('img');
+                    img.src = photo.url;
+                    img.alt = photo.name;
+                    
+                    const info = document.createElement('div');
+                    info.className = 'slide-info';
+                    info.innerHTML = `
+                        <h3>${photo.name}</h3>
+                        <p>スライド ${slideIndex + 1} / ${this.selectedPhotos.length}</p>
+                    `;
+                    
+                    slide.appendChild(img);
+                    slide.appendChild(info);
+                    this.slideshowContainer.appendChild(slide);
+                });
+            }
+
+            showSlide(index) {
+                const slides = this.slideshowContainer.querySelectorAll('.slide');
+                slides.forEach((slide, i) => {
+                    slide.classList.remove('active', 'fade-in');
+                    if (i === index) {
+                        slide.classList.add('active');
+                        
+                        // エフェクトを適用
+                        const effect = this.effectTypeSelect.value;
+                        if (effect === 'zoom' || effect === 'fade') {
+                            slide.classList.add('fade-in');
+                        }
+                    }
+                });
+
+                // プログレスバー更新
+                const progress = ((index + 1) / this.selectedPhotos.length) * 100;
+                this.progressFill.style.width = `${progress}%`;
+            }
+
+            nextSlide() {
+                this.currentSlide = (this.currentSlide + 1) % this.selectedPhotos.length;
+                this.showSlide(this.currentSlide);
+            }
+
+            updateStatus(message) {
+                if (this.status) {
+                    this.status.textContent = message;
+                }
+            }
+        }
+
+        // アプリケーション初期化
+        document.addEventListener('DOMContentLoaded', () => {
+            new SlideshowCreator();
+        });
     </script>
 </body>
 </html>

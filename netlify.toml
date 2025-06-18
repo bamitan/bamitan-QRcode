@@ -1,0 +1,6 @@
+# Netlify configuration for Music Video Creator static site
+[build]
+  # Directory to publish (root)
+  publish = "."
+  # No build command needed for plain HTML/CSS/JS
+  command = ""

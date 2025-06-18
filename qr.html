@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QRコード生成ツール</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #ff7eb9;
+      --secondary: #a0e7e5;
+      --bg: #fff1f8;
+      --text: #333;
+    }
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: linear-gradient(135deg, var(--secondary) 0%, var(--bg) 100%);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+    .container {
+      width: 100%;
+      max-width: 600px;
+      background: #fff;
+      border-radius: 8px;
+      padding: 2rem;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    h1 {text-align:center;margin-top:0;}
+    textarea {
+      width: 100%;
+      min-height: 120px;
+      padding: .75rem;
+      resize: vertical;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 1rem;
+    }
+    button, a.button, .primary-btn {
+      display: inline-block;
+      margin-top: 1rem;
+      padding: .6rem 1.2rem;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      font-size: 1rem;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    button:disabled {opacity:.6;cursor:not-allowed;}
+    #qr-output {text-align:center;margin-top:1.5rem;}
+    #history {
+      margin-top: 2rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+      gap: 1rem;
+    }
+    #history img {width:100%;height:auto;border:1px solid #ccc;border-radius:4px;cursor:pointer;}
+    .status{margin-top:.5rem;font-size:.9rem;color:#e74c3c;}
+    #history p {font-size: .75rem; text-align: center; word-wrap: break-word; margin: .25rem 0 0;}
+
+    /* 追加スタイル */
+    .container{position:relative;}
+    .mascot{position:absolute;top:-60px;right:-60px;width:120px;pointer-events:none;}
+    button,a.button{transition:background .2s ease;}
+    button:hover,a.button:hover{background:var(--primary);opacity:.9;}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>QRコード生成ツール</h1>
+    <img class="mascot" src="mascot.png" alt="マスコット">
+    <textarea id="qr-input" placeholder="URL、テキスト、電話番号などを入力してください"></textarea>
+    <button id="generate-btn" class="primary-btn">QRコード生成</button>
+    <p id="status-msg" class="status"></p>
+    <a id="download-btn" class="button" href="#" download="qrcode.png" style="display:none;">PNGをダウンロード</a>
+    <div id="qr-output">
+      <img id="qr-image" alt="QRコード" style="display:none; max-width: 260px; height:auto;" />
+    </div>
+    <h2>履歴</h2>
+    <div id="history"></div>
+  </div>
+
+  <!-- QRCode.js CDN -->
+  <script id="qrcode-lib" src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <script>
+    (function(){
+      // ライブラリ読み込み確認 & フォールバック
+      function ensureQrLib(){
+        return new Promise((resolve,reject)=>{
+          if(typeof QRCode!=='undefined' && QRCode.toDataURL){return resolve();}
+          // jsDelivr が失敗した場合に cdnjs へフォールバック
+          const alt = document.createElement('script');
+          alt.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.3/qrcode.min.js';
+          alt.onload = ()=>{
+            if(typeof QRCode!=='undefined' && QRCode.toDataURL){resolve();}
+            else reject(new Error('QRCode ライブラリ読み込み失敗'));
+          };
+          alt.onerror = ()=>reject(new Error('QRCode ライブラリ読み込み失敗'));
+          document.head.appendChild(alt);
+        });
+      }
+      const input = document.getElementById('qr-input');
+      const genBtn = document.getElementById('generate-btn');
+      const dlBtn = document.getElementById('download-btn');
+      // canvas 要らない形に変更
+      const imgEl = document.getElementById('qr-image');
+      const historyDiv = document.getElementById('history');
+
+      function generateQR(text){
+        // QRCode ライブラリがロードされているか確認
+        if(typeof QRCode === 'undefined' || !QRCode.toDataURL){
+          throw new Error('QRCode ライブラリが読み込まれていません');
+        }
+        return QRCode.toDataURL(text, { margin: 2, width: 260 });
+      }
+
+      function saveToHistory(text, dataUrl){
+        const history = JSON.parse(localStorage.getItem('qr_history') || '[]');
+        // Avoid duplicates of consecutive same item
+        if(history.length === 0 || history[0].text !== text){
+          history.unshift({text, dataUrl});
+          if(history.length > 10) history.pop();
+          localStorage.setItem('qr_history', JSON.stringify(history));
+        }
+      }
+
+      function renderHistory(){
+        const history = JSON.parse(localStorage.getItem('qr_history') || '[]');
+        historyDiv.innerHTML = '';
+        history.forEach(item => {
+          const wrapper = document.createElement('div');
+          const img = new Image();
+          img.src = item.dataUrl;
+          img.alt = item.text;
+          img.title = item.text;
+          img.addEventListener('click', () => {
+            input.value = item.text;
+            generateAndDisplay();
+          });
+          wrapper.appendChild(img);
+          historyDiv.appendChild(wrapper);
+        });
+      }
+
+      async function generateAndDisplay(){
+        const statusArea = document.getElementById('status-msg'); // may be null if element missing
+        if(statusArea) statusArea.textContent = '';
+        const text = input.value.trim();
+        if(!text){if(statusArea) statusArea.textContent='入力が空です';return;}
+        genBtn.disabled = true;
+        try{
+          await ensureQrLib();
+          const dataUrl = await generateQR(text);
+          // Canvas は描画専用、ユーザーには画像を見せる
+          imgEl.src = dataUrl;
+          imgEl.style.display = 'block';
+          dlBtn.style.display = 'inline-block';
+          dlBtn.href = dataUrl;
+          saveToHistory(text, dataUrl);
+          renderHistory();
+        }catch(e){
+          if(statusArea) statusArea.textContent = 'QRコードの生成に失敗しました';
+          console.error(e);
+        }finally{
+          genBtn.disabled = false;
+        }
+      }
+
+      genBtn.addEventListener('click', generateAndDisplay);
+      // Render history on load
+      renderHistory();
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Basketball Tactics Demo</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 32px; }
+    input[type="file"], input[type="text"] { margin-top: 8px; }
+    button { margin-top: 8px; }
+    #progress { margin-top: 16px; }
+    #diagram { border:1px solid #ccc; margin-top:24px; width:600px; height:350px; }
+  </style>
+</head>
+<body>
+  <h1>Basketball Tactics – Mock Demo</h1>
+  <h3>動画ファイルをアップロード</h3>
+  <input id="fileInput" type="file" accept="video/*" /> <br />
+  <button id="uploadBtn">アップロード</button>
+
+  <h3>または YouTube URL を入力</h3>
+  <input id="urlInput" type="text" size="50" placeholder="https://youtu.be/..." /> <br />
+  <button id="urlBtn">送信</button>
+
+  <div id="progress"></div>
+  <div id="diagram"></div>
+
+  <script>
+    const progress = document.getElementById('progress');
+    const diagram = document.getElementById('diagram');
+    let currentJob = null;
+
+    async function pollJob(jobId) {
+      progress.textContent = 'ジョブ実行中...';
+      // デモ用: 3 秒後に完了扱い
+      await new Promise(r => setTimeout(r, 3000));
+      progress.textContent = '完了! 戦術図を表示します。';
+      // SVG を取得して表示
+      fetch(`/jobs/${jobId}`)
+        .then(r => r.json())
+        .then(j => {
+          if (j.svg_urls && j.svg_urls.length) {
+            diagram.innerHTML = j.svg_urls.map(u => `<object data="${u}" type="image/svg+xml" width="500" height="300"></object>`).join('<br/>');
+          } else {
+            diagram.innerHTML = '<p>SVG がまだ生成されていません。</p>';
+          }
+        });
+    }
+
+    document.getElementById('uploadBtn').onclick = async () => {
+      const file = document.getElementById('fileInput').files[0];
+      if (!file) return alert('ファイルを選択してください');
+      const fd = new FormData();
+      fd.append('file', file);
+      progress.textContent = 'アップロード中...';
+      const res = await fetch('/videos/file', { method: 'POST', body: fd });
+      const data = await res.json();
+      currentJob = data.job_id;
+      pollJob(currentJob);
+    };
+
+    document.getElementById('urlBtn').onclick = async () => {
+      const url = document.getElementById('urlInput').value.trim();
+      if (!url) return alert('URL を入力してください');
+      progress.textContent = '送信中...';
+      const res = await fetch('/videos/url', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({url})});
+      const data = await res.json();
+      currentJob = data.job_id;
+      pollJob(currentJob);
+    };
+  </script>
+</body>
+</html>

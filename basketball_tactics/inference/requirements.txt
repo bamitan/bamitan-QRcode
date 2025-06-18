@@ -1,0 +1,5 @@
+ultralytics==8.1.5
+deep_sort_realtime>=1.4.0
+opencv-python-headless>=4.10.0.82
+boto3>=1.34.113
+svgwrite>=1.4.3
