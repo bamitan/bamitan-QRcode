@@ -3,19 +3,32 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>QRコード生成ツール</title>
+  <title>BAMITANのQR屋さん</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Mochiy+Pop+One&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" href="mascot.png">
   <style>
     :root {
-      --primary: #ff7eb9;
-      --secondary: #a0e7e5;
-      --bg: #fff1f8;
+      /* Mascot-inspired palette */
+      --primary: #6a56a5; /* headband purple */
+      --secondary: #fddc5c; /* chick yellow */
+      --accent: #48c280; /* eye green */
+      --bg-start: #d0f4ff; /* light cyan */
+      --bg-end: #fff7e8; /* light cream */
+      /* old colors removed*/
+      
+      
       --text: #333;
     }
     body {
+      position:relative; /* for pseudo */
+      display:flex;
+      justify-content:center;
+      align-items:flex-start;
+      gap:1.5rem;
       margin: 0;
       font-family: Arial, Helvetica, sans-serif;
-      background: linear-gradient(135deg, var(--secondary) 0%, var(--bg) 100%);
+      background: linear-gradient(135deg, var(--bg-start) 0%, var(--bg-end) 100%);
       color: var(--text);
       display: flex;
       justify-content: center;
@@ -40,6 +53,8 @@
       font-size: 1rem;
     }
     button, a.button, .primary-btn {
+      background: var(--primary);
+      color:#fff;
       display: inline-block;
       margin-top: 1rem;
       padding: .6rem 1.2rem;
@@ -56,37 +71,164 @@
     #history {
       margin-top: 2rem;
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+      grid-template-columns: repeat(6, 1fr);
       gap: 1rem;
     }
+
     #history img {width:100%;height:auto;border:1px solid #ccc;border-radius:4px;cursor:pointer;}
     .status{margin-top:.5rem;font-size:.9rem;color:#e74c3c;}
     #history p {font-size: .75rem; text-align: center; word-wrap: break-word; margin: .25rem 0 0;}
+    /* カラープリセット */
+    #preset-colors{display:flex;gap:.5rem;margin-bottom:.75rem;flex-wrap:wrap;}
+    .color-swatch{width:24px;height:24px;border:2px solid #ccc;border-radius:4px;cursor:pointer;}
+    .color-swatch.selected{outline:3px solid var(--accent);}
+    /* 絵文字プリセット */
+    #emoji-preset{display:flex;gap:.4rem;margin:.75rem 0;flex-wrap:wrap;justify-content:center;}
+    .emoji-choice{font-size:1.5rem;cursor:pointer;user-select:none;padding:.2rem .35rem;border:1px solid #ccc;border-radius:4px;transition:transform .1s;}
+    .emoji-choice.selected{outline:2px solid var(--accent);transform:scale(1.1);}
+.ads{display:flex;flex-direction:column;gap:1rem;align-items:center;width:120px;margin-top:80px;}
+    .ad-item{position:relative;width:120px;height:120px;background:#f1f1f1;border:2px dashed #ccc;border-radius:8px;display:flex;justify-content:center;align-items:center;color:#888;font-size:.9rem;overflow:hidden;cursor:pointer;transition:transform .2s;}
+    .ad-item:hover{transform:scale(1.05);box-shadow:0 4px 10px rgba(0,0,0,.1);} 
+    .ad-mascot{position:absolute;top:-25px;right:-15px;width:60px;animation:float 3s ease-in-out infinite;pointer-events:none;}
+    @keyframes float{0%{transform:translateY(0);}50%{transform:translateY(8px);}100%{transform:translateY(0);}}
 
     /* 追加スタイル */
-    .container{position:relative;}
-    .mascot{position:absolute;top:-60px;right:-60px;width:120px;pointer-events:none;}
+    .mascot{position:fixed;top:10px;left:auto;right:10px;width:140px;pointer-events:none;z-index:10;transition:left 2s linear, top 2s linear;animation:mascotWiggle 4s ease-in-out infinite;}/* mascot */
+    @keyframes mascotWiggle{0%{transform:rotate(-3deg);}50%{transform:rotate(3deg);}100%{transform:rotate(-3deg);}}
     button,a.button{transition:background .2s ease;}
-    button:hover,a.button:hover{background:var(--primary);opacity:.9;}
+    .banner{display:inline-block;padding:1rem 2.5rem;border-radius:18px;box-shadow:0 8px 14px rgba(0,0,0,.5) inset,0 6px 12px rgba(0,0,0,.35);margin-bottom:1.4rem;border:5px solid #5e3e1e;
+      background:
+        repeating-linear-gradient(45deg,#be8a55 0 12px,#a46f37 12px 24px),
+        linear-gradient(180deg,#e0b67e 0%,#a87843 100%);
+    }
+    .banner h1{
+      font-family:'Mochiy Pop One','Poppins',sans-serif;
+      font-size:2.8rem;
+      font-weight:900;
+      color:#fff9d0;
+      -webkit-text-stroke:2.5px #31200a;
+      text-shadow:0 4px 6px rgba(0,0,0,.5);
+      white-space:nowrap;
+    }
+    button:hover,a.button:hover{background:var(--accent);opacity:.9;}
+
+    /* ウォーターマーク背景 */
+    body::before{
+      content:'';
+      position:fixed;
+      top:50%;
+      left:50%;
+      width:800px;
+      height:800px;
+      transform:translate(-50%,-50%);
+      background:url('mascot.png') center/contain no-repeat;
+      opacity:0.15;
+      pointer-events:none;
+      filter:blur(1px);
+    }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>QRコード生成ツール</h1>
-    <img class="mascot" src="mascot.png" alt="マスコット">
+  <!-- 左広告 -->
+  <aside class="ads">
+    <div class="ad-item"><span>広告1</span></div>
+    <div class="ad-item"><span>広告2</span></div>
+    <div class="ad-item"><span>広告3</span></div>
+  </aside>
+
+  <!-- メインツール -->
+  <img class="mascot" src="mascot_clean.png" alt="マスコット">
+  <div class="container" style="text-align:center;">
+    <div class="banner"><h1>BAMITANのQR屋さん</h1></div>
+    <p id="visitor-count" style="text-align:right;font-size:.9rem;margin-top:-1rem;margin-bottom:1rem;color:#555;">訪問者数: --</p>
+    
+    
+    <input type="text" id="title-input" placeholder="QR名 (任意)" style="width:100%;padding:.6rem;border:1px solid #ccc;border-radius:4px;font-size:1rem;margin-bottom:.75rem;">
+    <label style="display:block;margin-bottom:.75rem;font-size:.9rem;">QRカラー:
+      <input type="color" id="color-input" value="#000000" style="margin-left:.5rem;vertical-align:middle;">
+    </label>
+    <div id="preset-colors">
+      <span class="color-swatch selected" data-color="#000000" style="background:#000000;"></span>
+      <span class="color-swatch" data-color="#6a56a5" style="background:#4b3c86;"></span>
+      <span class="color-swatch" data-color="#f1c40f" style="background:#f1c40f;"></span>
+      <span class="color-swatch" data-color="#27ae60" style="background:#27ae60;"></span>
+      <span class="color-swatch" data-color="#ff6b6b" style="background:#ff6b6b;"></span>
+      <span class="color-swatch" data-color="#d77cd9" style="background:#d77cd9;"></span>
+      <span class="color-swatch" data-color="#16a085" style="background:#16a085;"></span>
+      <span class="color-swatch" data-color="#54a0ff" style="background:#54a0ff;"></span>
+    </div>
+    <label style="display:block;margin-bottom:.75rem;font-size:.9rem;">ドット形状:
+      <select id="shape-select" style="margin-left:.5rem;">
+        <option value="square">四角</option>
+        <option value="dots">丸</option>
+      </select>
+    </label>
     <textarea id="qr-input" placeholder="URL、テキスト、電話番号などを入力してください"></textarea>
+    <div id="emoji-preset">
+      <span class="emoji-choice" data-emoji="⭐️">⭐️</span>
+      <span class="emoji-choice" data-emoji="❤️">❤️</span>
+      <span class="emoji-choice" data-emoji="🔥">🔥</span>
+      <span class="emoji-choice" data-emoji="😊">😊</span>
+      <span class="emoji-choice" data-emoji="🎉">🎉</span>
+      <span class="emoji-choice" data-emoji="💡">💡</span>
+      <span class="emoji-choice" data-emoji="✅">✅</span>
+      <span class="emoji-choice" data-emoji="❌">❌</span>
+      <span class="emoji-choice" data-emoji="🤖">🤖</span>
+      <span class="emoji-choice" data-emoji="🐱">🐱</span>
+      <span class="emoji-choice" data-emoji="🐶">🐶</span>
+      <span class="emoji-choice" data-emoji="🍀">🍀</span>
+      <span class="emoji-choice" data-emoji="🌈">🌈</span>
+      <span class="emoji-choice" data-emoji="🏀">🏀</span>
+      <span class="emoji-choice" data-emoji="🎵">🎵</span>
+      <span class="emoji-choice" data-emoji="🚀">🚀</span>
+      <span class="emoji-choice" data-emoji="📚">📚</span>
+      <span class="emoji-choice" data-emoji="🍣">🍣</span>
+      <span class="emoji-choice" data-emoji="🎂">🎂</span>
+      <span class="emoji-choice" data-emoji="🖼️">🖼️</span>
+      <span class="emoji-choice" data-emoji="🎮">🎮</span>
+      <span class="emoji-choice" data-emoji="👑">👑</span>
+      <span class="emoji-choice" data-emoji="🌸">🌸</span>
+      <span class="emoji-choice" data-emoji="🌞">🌞</span>
+      <span class="emoji-choice" data-emoji="👻">👻</span>
+      <span class="emoji-choice" data-emoji="🦄">🦄</span>
+      <span class="emoji-choice" data-emoji="🧡">🧡</span>
+      <span class="emoji-choice" data-emoji="🏆">🏆</span>
+      <span class="emoji-choice" data-emoji="🐼">🐼</span>
+      <span class="emoji-choice" data-emoji="🐸">🐸</span>
+      <span class="emoji-choice" data-emoji="🍕">🍕</span>
+      <span class="emoji-choice" data-emoji="🥳">🥳</span>
+      <span class="emoji-choice" data-emoji="🏝️">🏝️</span>
+      <span class="emoji-choice" data-emoji="⚽">⚽</span>
+      <span class="emoji-choice" data-emoji="📸">📸</span>
+      <span class="emoji-choice" data-emoji="🧩">🧩</span>
+      <span class="emoji-choice" data-emoji="🛡️">🛡️</span>
+      <span class="emoji-choice" data-emoji="🍼">🍼</span>
+      <span class="emoji-choice" data-emoji="🏡">🏡</span>
+    </div>
+    <label style="display:block;margin-top:1rem;font-size:.9rem;">ロゴ画像(任意):
+      <input type="file" id="logo-input" accept="image/*" style="margin-top:.25rem;">
+    </label>
     <button id="generate-btn" class="primary-btn">QRコード生成</button>
     <p id="status-msg" class="status"></p>
     <a id="download-btn" class="button" href="#" download="qrcode.png" style="display:none;">PNGをダウンロード</a>
     <div id="qr-output">
       <img id="qr-image" alt="QRコード" style="display:none; max-width: 260px; height:auto;" />
     </div>
-    <h2>履歴</h2>
+    <h2 style="display:inline-block;">履歴</h2><button id="clear-history" class="button" style="margin-left:1rem;padding:.3rem .8rem;font-size:.8rem;">履歴をクリア</button>
     <div id="history"></div>
   </div>
 
+  <!-- 右広告 -->
+  <aside class="ads">
+    <div class="ad-item"><span>広告4</span></div>
+    <div class="ad-item"><span>広告5</span></div>
+    <div class="ad-item"><span>広告6</span></div>
+  </aside>
+
   <!-- QRCode.js CDN -->
   <script id="qrcode-lib" src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <!-- QR Code Styling for rounded dots -->
+  <script id="qrcode-styling-lib" src="https://cdn.jsdelivr.net/npm/qr-code-styling/lib/qr-code-styling.js"></script>
   <script>
     (function(){
       // ライブラリ読み込み確認 & フォールバック
@@ -94,6 +236,7 @@
         return new Promise((resolve,reject)=>{
           if(typeof QRCode!=='undefined' && QRCode.toDataURL){return resolve();}
           // jsDelivr が失敗した場合に cdnjs へフォールバック
+          const cell = 14; const margin = 14;
           const alt = document.createElement('script');
           alt.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.3/qrcode.min.js';
           alt.onload = ()=>{
@@ -105,25 +248,89 @@
         });
       }
       const input = document.getElementById('qr-input');
+      
+      const titleInput = document.getElementById('title-input');
+      const colorInput = document.getElementById('color-input');
+      const shapeSelect = document.getElementById('shape-select');
       const genBtn = document.getElementById('generate-btn');
       const dlBtn = document.getElementById('download-btn');
+      const logoInput = document.getElementById('logo-input');
       // canvas 要らない形に変更
       const imgEl = document.getElementById('qr-image');
       const historyDiv = document.getElementById('history');
+      // 訪問者数取得
+      const visitorEl = document.getElementById('visitor-count');
+      fetch('https://api.countapi.xyz/hit/qrtool/nagasawa?amount=1')
+        .then(r=>r.json())
+        .then(d=>{ if(visitorEl) visitorEl.textContent = '訪問者数: '+ d.value;})
+        .catch(()=>{});
+      // 絵文字プリセット
+      let selectedEmoji = '';
+      document.querySelectorAll('.emoji-choice').forEach(el=>{
+        el.addEventListener('click',()=>{
+          document.querySelectorAll('.emoji-choice').forEach(e=>e.classList.remove('selected'));
+          el.classList.add('selected');
+          selectedEmoji = el.dataset.emoji || '';
+        });
+      });
+      // カラープリセットイベント
+      document.querySelectorAll('.color-swatch').forEach(sw=>{
+        sw.addEventListener('click',()=>{
+          document.querySelectorAll('.color-swatch').forEach(s=>s.classList.remove('selected'));
+          sw.classList.add('selected');
+          colorInput.value = sw.dataset.color;
+        });
+      });
 
-      function generateQR(text){
-        // QRCode ライブラリがロードされているか確認
+      function generateQR(text, color, shape){
         if(typeof QRCode === 'undefined' || !QRCode.toDataURL){
-          throw new Error('QRCode ライブラリが読み込まれていません');
+          // ライブラリがない場合は Google Chart API を利用
+          const hex = color.replace('#','');
+            const url = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&color=${hex}&bgcolor=FFFFFF&data=${encodeURIComponent(text)}`;
+          return Promise.resolve(url);
         }
-        return QRCode.toDataURL(text, { margin: 2, width: 260 });
+        if(shape!== 'square'){
+    return new Promise(async (resolve,reject)=>{
+      try{
+        if(typeof QRCodeStyling==='undefined'){
+          await new Promise((res,rej)=>{
+            const s=document.createElement('script');
+            s.src='https://cdn.jsdelivr.net/npm/qr-code-styling/lib/qr-code-styling.js';
+            s.onload=res; s.onerror=rej; document.head.appendChild(s);
+          });
+        }
+        const qrStyling = new QRCodeStyling({
+          width:260,
+          height:260,
+          data:text,
+          dotsOptions:{type: shape==='square' ? 'square' : 'dots', color: color},
+          backgroundOptions:{color:'#FFFFFF'}
+        });
+        qrStyling.getRawData('png').then(blob=>{
+          const reader=new FileReader();
+          reader.onload=()=>resolve(reader.result);
+          reader.readAsDataURL(blob);
+        });
+      }catch(e){reject(e);}  
+    });
+  }
+  return new Promise((resolve, reject) => {
+          try{
+            QRCode.toDataURL(text, { margin: 2, width: 260, color: { dark: color, light: '#FFFFFF' } }, (err, url) => {
+              if(err) return reject(err);
+              resolve(url);
+            });
+          }catch(e){
+            reject(e);
+          }
+        });
       }
 
-      function saveToHistory(text, dataUrl){
+      function saveToHistory(text, dataUrl, title){
         const history = JSON.parse(localStorage.getItem('qr_history') || '[]');
         // Avoid duplicates of consecutive same item
         if(history.length === 0 || history[0].text !== text){
-          history.unshift({text, dataUrl});
+          history.unshift({text, dataUrl, title});
           if(history.length > 10) history.pop();
           localStorage.setItem('qr_history', JSON.stringify(history));
         }
@@ -143,6 +350,11 @@
             generateAndDisplay();
           });
           wrapper.appendChild(img);
+          if(item.title){
+            const cap=document.createElement('p');
+            cap.textContent=item.title;
+            wrapper.appendChild(cap);
+          }
           historyDiv.appendChild(wrapper);
         });
       }
@@ -151,20 +363,26 @@
         const statusArea = document.getElementById('status-msg'); // may be null if element missing
         if(statusArea) statusArea.textContent = '';
         const text = input.value.trim();
-        if(!text){if(statusArea) statusArea.textContent='入力が空です';return;}
+        const title = titleInput.value.trim();
+        if(!text){ if(statusArea) statusArea.textContent='入力が空です';return; }
+        const payload = text;
+        const color = colorInput.value || '#000000';
+        const shape = shapeSelect.value;
         genBtn.disabled = true;
         try{
-          await ensureQrLib();
-          const dataUrl = await generateQR(text);
-          // Canvas は描画専用、ユーザーには画像を見せる
-          imgEl.src = dataUrl;
+          try{await ensureQrLib();}catch(_e){/* ライブラリ読込失敗でも API フォールバック */}
+          const qrUrl = await generateQR(payload, color, shape);
+          // ---- 合成処理 ----
+          const finalUrl = await composeWithLogo(qrUrl);
+          imgEl.src = finalUrl;
           imgEl.style.display = 'block';
           dlBtn.style.display = 'inline-block';
-          dlBtn.href = dataUrl;
-          saveToHistory(text, dataUrl);
+          dlBtn.href = finalUrl;
+          dlBtn.download = (title || 'qrcode') + '.png';
+          saveToHistory(payload, finalUrl, title);
           renderHistory();
         }catch(e){
-          if(statusArea) statusArea.textContent = 'QRコードの生成に失敗しました';
+          if(statusArea) statusArea.textContent = 'QRコードの生成に失敗しました: '+ (e.message || e);
           console.error(e);
         }finally{
           genBtn.disabled = false;
@@ -172,9 +390,117 @@
       }
 
       genBtn.addEventListener('click', generateAndDisplay);
+      document.getElementById('clear-history').addEventListener('click', ()=>{localStorage.removeItem('qr_history');renderHistory();});
       // Render history on load
       renderHistory();
-    })();
+          // QRとロゴを合成
+      function composeWithLogo(qrUrl){
+        return new Promise(resolve=>{
+          const qrImg=new Image();
+          qrImg.crossOrigin='Anonymous';
+          qrImg.src=qrUrl;
+          qrImg.onload=()=>{
+            const size=260;
+            const canvas=document.createElement('canvas');
+            canvas.width=canvas.height=size;
+            const ctx=canvas.getContext('2d');
+            ctx.drawImage(qrImg,0,0,size,size);
+
+            const file=logoInput.files && logoInput.files[0];
+            if(file){
+              const reader=new FileReader();
+              reader.onload=()=>{
+                const logo=new Image();
+                logo.onload=()=>{
+                  const logoSize=60;
+                  const x=(size-logoSize)/2;
+                  const y=(size-logoSize)/2;
+                  ctx.drawImage(logo,x,y,logoSize,logoSize);
+                  resolve(canvas.toDataURL());
+                };
+                logo.src=reader.result;
+              };
+              reader.readAsDataURL(file);
+            }else{
+              if(selectedEmoji){
+                ctx.font='60px "Apple Color Emoji","Segoe UI Emoji",sans-serif';
+                ctx.textAlign='center';
+                ctx.textBaseline='middle';
+                ctx.fillText(selectedEmoji,size/2,size/2);
+              }
+              resolve(canvas.toDataURL());
+            }
+          };
+        });
+      }
+
+/* duplicate old composeWithLogo
+          const qrImg = new Image();
+          qrImg.crossOrigin = 'Anonymous';
+          qrImg.src = qrUrl;
+          qrImg.onload = async () => {
+            const canvas = document.createElement('canvas');
+            const size = 260;
+            canvas.width = canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(qrImg, 0, 0, size, size);
+
+            const file = logoInput.files && logoInput.files[0];
+            if(file){
+              const reader = new FileReader();
+              reader.onload = () => {
+                const logoImg = new Image();
+                logoImg.onload = () => {
+                  const logoSize = 60; // px
+                  const x = (size - logoSize)/2;
+                  const y = (size - logoSize)/2;
+                  ctx.fillStyle = '#fff';
+                  ctx.font = `bold ${14-2}px Poppins, monospace`; // 白背景
+                  ctx.drawImage(logoImg, x, y, logoSize, logoSize);
+                  resolve(canvas.toDataURL());
+              };
+              logoImg.src = reader.result;
+            };
+            reader.readAsDataURL(file);
+          }else{
+    if(selectedEmoji){
+      ctx.font = '60px "Apple Color Emoji", "Segoe UI Emoji", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(selectedEmoji, size/2, size/2);
+          };
+          logoImg.src = reader.result;
+        };
+        reader.readAsDataURL(file);
+      }else{
+        if(selectedEmoji){
+          ctx.font = '60px "Apple Color Emoji", "Segoe UI Emoji", sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(selectedEmoji, size/2, size/2);
+        }
+        resolve(canvas.toDataURL());
+      }          }
+          };
+        });
+       }
+*/
+ 
+       renderHistory();
+          // --- mascot random movement ---
+      const mascotEl = document.querySelector('.mascot');
+      function moveMascot(){
+        if(!mascotEl) return;
+        const maxX = window.innerWidth - mascotEl.offsetWidth - 20;
+        const maxY = window.innerHeight - mascotEl.offsetHeight - 20;
+        const x = Math.random()*maxX;
+        const y = Math.random()*maxY;
+        mascotEl.style.left = x + 'px';
+        mascotEl.style.top = y + 'px';
+      }
+      moveMascot();
+      setInterval(moveMascot, 5000);
+  })();
   </script>
 </body>
 </html>
