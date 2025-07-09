@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>BAMITANの思い出屋さん | 無料QRコードジェネレーター＆かわいいスライドショー</title>
   <meta name="description" content="BAMITANの思い出屋さんは、無料で高品質なQRコードを作成し、かわいいマスコットと一緒に画像スライドショー動画も生成できるWebツールです。URL・テキスト・電話番号などを簡単にQR化！" />
   <meta name="keywords" content="QRコード, 無料, ジェネレーター, スライドショー, 画像, 動画, BAMITAN" />
@@ -36,6 +36,12 @@
   <link href="https://fonts.googleapis.com/css2?family=Mochiy+Pop+One&display=swap" rel="stylesheet">
   <link rel="icon" type="image/png" href="mascot.png">
   <style>
+    /* 共通スタイル */
+    * {
+      -webkit-tap-highlight-color: transparent;
+      box-sizing: border-box;
+    }
+    
     :root {
       /* Mascot-inspired palette */
       --primary: #8b5e3c; /* rich chocolate brown */
@@ -64,22 +70,42 @@
     }
     .central{display:flex;flex-direction:column;align-items:center;gap:2rem;}
     .container {
+      max-width: 100%;
       width: 100%;
-      max-width: 600px;
+      margin: 0 auto;
+      padding: 15px;
       background: #fff;
-      border-radius: 8px;
-      padding: 2rem;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    
+    @media (min-width: 768px) {
+      .container {
+        max-width: 800px;
+        padding: 20px;
+      }
     }
     h1 {text-align:center;margin-top:0;}
-    textarea {
+    input[type="text"], input[type="file"], select {
       width: 100%;
-      min-height: 120px;
-      padding: .75rem;
-      resize: vertical;
-      border: 1px solid #ccc;
-      border-radius: 4px;
+      padding: 12px 15px;
+      margin: 8px 0;
+      border: 1px solid #ddd;
+      border-radius: 8px;
       font-size: 1rem;
+      -webkit-appearance: none;
+    }
+    
+    /* スマホ用の入力フィールド調整 */
+    @media (max-width: 480px) {
+      input[type="text"], select {
+        font-size: 16px; /* iOSでズームを防ぐ */
+        padding: 14px 15px;
+      }
+      
+      input[type="file"] {
+        font-size: 14px;
+      }
     }
     button, a.button, .primary-btn {
       background: var(--primary);
@@ -90,10 +116,21 @@
       background: var(--primary);
       color: #fff;
       border: none;
-      border-radius: 4px;
+      border-radius: 6px;
       font-size: 1rem;
       cursor: pointer;
-      text-decoration: none;
+      transition: all 0.3s;
+      min-width: 120px;
+      text-align: center;
+      -webkit-appearance: none;
+    }
+    
+    @media (max-width: 480px) {
+      .button, .primary-btn {
+        padding: 12px 20px;
+        font-size: 0.9rem;
+        min-width: 100px;
+      }
     }
     button:disabled {opacity:.6;cursor:not-allowed;}
     #qr-output {text-align:center;margin-top:1.5rem;}
@@ -115,7 +152,21 @@
     #emoji-preset{display:flex;gap:.4rem;margin:.75rem 0;flex-wrap:wrap;justify-content:center;}
     .emoji-choice{font-size:1.5rem;cursor:pointer;user-select:none;padding:.2rem .35rem;border:1px solid #ccc;border-radius:4px;transition:transform .1s;}
     .emoji-choice.selected{outline:2px solid var(--accent);transform:scale(1.1);}
-.ads{display:flex;flex-direction:column;gap:1rem;align-items:center;width:120px;margin-top:80px;}
+    .ads {
+      display: none; /* スマホでは非表示 */
+    }
+    
+    @media (min-width: 1200px) {
+      .ads {
+        display: flex;
+        position: fixed;
+        left: 20px;
+        top: 50%;
+        transform: translateY(-50%);
+        flex-direction: column;
+        gap: 20px;
+      }
+    }
     .ad-item{position:relative;width:120px;height:120px;background:#f1f1f1;border:2px dashed #ccc;border-radius:8px;display:flex;justify-content:center;align-items:center;color:#888;font-size:.9rem;overflow:hidden;cursor:pointer;transition:transform .2s;}
     .ad-item:hover{transform:scale(1.05);box-shadow:0 4px 10px rgba(0,0,0,.1);} 
     .ad-mascot{position:absolute;top:-25px;right:-15px;width:60px;animation:float 3s ease-in-out infinite;pointer-events:none;}
@@ -124,7 +175,7 @@
     /* 追加スタイル */
     .mascot{position:fixed;top:10px;left:auto;right:10px;width:140px;pointer-events:auto;cursor:grab;user-select:none;z-index:10;transition:left 2s linear, top 2s linear;animation:mascotWiggle 4s ease-in-out infinite;}/* mascot */
     @keyframes mascotWiggle{0%{transform:rotate(-3deg);}50%{transform:rotate(3deg);}100%{transform:rotate(-3deg);}}
-    button,a.button{transition:background .2s ease;}
+    button,a.button{transition:background .2s;}
     .banner{display:inline-block;padding:1rem 2.5rem;border-radius:18px;box-shadow:0 8px 14px rgba(0,0,0,.5) inset,0 6px 12px rgba(0,0,0,.35);margin-bottom:1.4rem;border:5px solid #5e3e1e;
       background:
         repeating-linear-gradient(45deg,#be8a55 0 12px,#a46f37 12px 24px),
@@ -183,7 +234,34 @@
     .flip{animation:flipIn 1s ease-in-out both;}
     .bounce{animation:bounceIn 1s ease-in-out both;}
     .hoop{position:fixed;bottom:10px;right:10px;width:140px;pointer-events:none;opacity:0.9;}
-    .score-panel{position:fixed;top:390px;right:20px;z-index:300;background:rgba(0,0,0,.6);padding:.6rem 1rem;border-radius:8px;color:#fff;font-family:'Mochiy Pop One','Poppins',sans-serif;text-align:right;}
+    .score-panel {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 300;
+      background: rgba(0,0,0,.6);
+      padding: 0.6rem 1rem;
+      border-radius: 8px;
+      color: #fff;
+      font-family: 'Mochiy Pop One', 'Poppins', sans-serif;
+      text-align: center;
+      width: 90%;
+      max-width: 300px;
+    }
+    
+    @media (min-width: 768px) {
+      .score-panel {
+        top: 390px;
+        right: 20px;
+        left: auto;
+        bottom: auto;
+        transform: none;
+        width: auto;
+        max-width: none;
+        text-align: right;
+      }
+    }
     .score-panel span{display:block;font-size:1.1rem;}
     .score-panel .best{color:#ffd95c;font-size:1rem;}
     .score-panel .alltime{color:#ff6b6b;font-size:1rem;}
@@ -1159,7 +1237,6 @@
        isFaceFilterActive = true; // 顔抽出フィルターを有効化
        const groupSet = new Set(Array.from(selectedThumbs).map(t=>parseInt(t.dataset.group,10)));
        // 選択した顔を含む画像のみを表示
-       const originals = new Set();
        const originals = new Set();
         groupSet.forEach(idx=>{
           const g = globalGroups[idx];
