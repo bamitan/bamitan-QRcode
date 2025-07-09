@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://bamitan.github.io/sitemap.xml

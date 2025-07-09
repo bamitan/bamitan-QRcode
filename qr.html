@@ -126,6 +126,23 @@
       pointer-events:none;
       filter:blur(1px);
     }
+    /* --- score panel styles --- */
+    .score-panel{
+      position:fixed;
+      top:20px;
+      left:20px;
+      transform:none;
+      z-index:300;
+      background:rgba(0,0,0,.6);
+      padding:.6rem 1rem;
+      border-radius:8px;
+      color:#fff;
+      font-family:'Mochiy Pop One','Poppins',sans-serif;
+      text-align:right;
+    }
+    .score-panel span{display:block;font-size:1.1rem;}
+    .score-panel .best{color:#ffd95c;font-size:1rem;}
+    .score-panel .alltime{color:#ff6b6b;font-size:1rem;}
   </style>
 </head>
 <body>
@@ -260,10 +277,11 @@
       const historyDiv = document.getElementById('history');
       // 訪問者数取得
       const visitorEl = document.getElementById('visitor-count');
-      fetch('https://api.countapi.xyz/hit/qrtool/nagasawa?amount=1')
-        .then(r=>r.json())
-        .then(d=>{ if(visitorEl) visitorEl.textContent = '訪問者数: '+ d.value;})
-        .catch(()=>{});
+      // 
+      // fetch('https://api.countapi.xyz/hit/qrtool/nagasawa?amount=1')
+        // .then(r=>r.json())
+        // .then(d=>{ if(visitorEl) visitorEl.textContent = '訪問者数: '+ d.value;})
+        // .catch(()=>{});
       // 絵文字プリセット
       let selectedEmoji = '';
       document.querySelectorAll('.emoji-choice').forEach(el=>{
@@ -393,6 +411,30 @@
       document.getElementById('clear-history').addEventListener('click', ()=>{localStorage.removeItem('qr_history');renderHistory();});
       // Render history on load
       renderHistory();
+      // --- score panel setup (debug) ---
+      function setupScorePanel(){
+        console.log('[QR] setting up score panel');
+        const todayKey = 'bestScore_' + new Date().toLocaleDateString();
+        const allTimeKey = 'allTimeBestScore';
+        const currentScoreElId = 'current-score';
+        let bestScore = parseInt(localStorage.getItem(todayKey) || '0');
+        let allTimeScore = parseInt(localStorage.getItem(allTimeKey) || '0');
+        let scorePanel = document.getElementById('score-panel');
+        if(!scorePanel){
+          scorePanel = document.createElement('div');
+          scorePanel.id = 'score-panel';
+          scorePanel.className = 'score-panel';
+          scorePanel.innerHTML = `<span id="${currentScoreElId}">0 ゴール</span><span class="best" id="best-score">今日の最高: ${bestScore}</span><span class="alltime" id="alltime-score">史上最高: ${allTimeScore}</span>`;
+          document.body.appendChild(scorePanel);
+          console.log('[QR] score panel created');
+        }
+        Object.assign(scorePanel.style, {position:'fixed', top:'20px', left:'20px', transform:'none'});
+      }
+      if(document.readyState === 'complete') setupScorePanel();
+      else window.addEventListener('load', setupScorePanel);
+
+
+
           // QRとロゴを合成
       function composeWithLogo(qrUrl){
         return new Promise(resolve=>{
